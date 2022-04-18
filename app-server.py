@@ -1,13 +1,12 @@
 import socket
 import threading
-from tkinter.messagebox import INFO
 import uuid
 import json
 import logging
 import time
-import select
 
 
+# server info
 PORT_1 = 8000
 PORT_2 = 8001
 ports = [PORT_1,PORT_2]
@@ -17,6 +16,8 @@ SERVER = socket.gethostbyname(socket.gethostname())
 FORMAT = 'UTF-8'
 DISCONNECT = '!DISCONNECT'
 print('Socket created')
+
+#logger
 logger = logging.getLogger()
 formatter = logging.Formatter('%(message)s')
 logger.setLevel("INFO")
@@ -29,16 +30,11 @@ for port in ports:
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((SERVER, port))
     sockets.append(server_socket)
-# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# ADDR_1 = (SERVER, PORT_1)
-# ADDR_2 = (SERVER, PORT_2)
-# s.bind(ADDR_1)
-# s2.bind(ADDR_2)
 
+#dict for storing id and code, same as in client.
 access_id_code = {}
 
-
+#8000 handle client. 
 def handle_client(conn_1, addr_1):
     print(f'[NEW CONNECTION] {addr_1} connected')
     connected = True
@@ -47,9 +43,9 @@ def handle_client(conn_1, addr_1):
         if msg_length:
             msg_length = int(msg_length)
             msg = conn_1.recv(msg_length).decode(FORMAT)
-            if msg[:2] == 'id':
+            if msg[:2] == 'id':  # id starts with letters id (that's how we differ it from other messages)      
                 client_id = msg[2:]
-                access_code = str(uuid.uuid4())
+                access_code = str(uuid.uuid4()) #generating access code with same id tool. Doesn't matter since it's uniqe.
                 access_id_code[client_id] = access_code
                 send_code = 'ac' + str(access_code)
                 conn_1.send(send_code.encode(FORMAT))
@@ -59,6 +55,7 @@ def handle_client(conn_1, addr_1):
                 connected = False
     conn_1.close()    
 
+#8001 client handeler. 
 def handle_client_2(conn_2, addr_2):
     print(f'[NEW CONNECTION] {addr_2} connected')
     connected = True
@@ -68,6 +65,7 @@ def handle_client_2(conn_2, addr_2):
             id_code = json.loads(rec_msg)
             print(id_code)
             for k,v in id_code.items():
+                # Server gets json - decodes to dict and compares received code with stored pair id:code in dict above. 
                 if access_id_code[k] == v:
                     conn_2.send('Access allowed'.encode(FORMAT))
                     logger.log(msg=f'id: {k}, {time.asctime(time.localtime())} access allowed',level=logging.INFO)   
@@ -79,9 +77,7 @@ def handle_client_2(conn_2, addr_2):
     
 
 def start_1():
-    # s.listen(50)
-    # s2.listen(50)
-    # print(f'Server is listening on {SERVER, PORT_1}')  
+
     while True:
         s1 = sockets[0]
         s2 = sockets[1]
@@ -89,6 +85,7 @@ def start_1():
         s2.listen(50)
         for s in sockets:
             conn, addr = s.accept()
+            # Didn't know how to quickly get port number from incoming connection via methods, so i got it from conn string. 
             sock_info = str(conn).split(',')
             p1 = sock_info[-3][1:5]
             port_connected = int(p1)
