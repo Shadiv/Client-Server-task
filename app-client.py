@@ -39,6 +39,7 @@ def send_id(client_id):
     c.send(send_length)
     c.send(id_message)
     print('message sent') 
+    # received message
     rec_msg = c.recv(1024).decode(FORMAT)
     # after sending id to port 8000 client receives an access code. String starts with ac (acces code) and then contains actual code, that's why we slice it and add to dict.
     if rec_msg[:2] == 'ac':
@@ -54,7 +55,7 @@ def send_access(access_id_code):
     print(rec_msg_2)
     
 
-
+# Connection 1 = c, connection 2 = c2.
 c = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #1 socket
 c2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #2 socket
 
